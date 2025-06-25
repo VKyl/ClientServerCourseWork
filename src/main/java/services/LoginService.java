@@ -5,7 +5,7 @@ import database.DataBase;
 import database.MySqlDb;
 import lombok.SneakyThrows;
 
-public class LoginService {
+public class LoginService implements IDbExecutorService{
     private final DataBase db;
 
     public LoginService() {
@@ -14,18 +14,28 @@ public class LoginService {
 
     @SneakyThrows
     public boolean signIn(LoginRequest authData) {
-        String sql = "SELECT * FROM user WHERE login = " + authData.login() + " AND password = " + authData.password();
+        String sql = "SELECT * FROM " + tableName() + " WHERE login = " + authData.login() + " AND password = " + authData.password();
         return db.execQuery(sql).next();
     }
 
     public boolean signUp(LoginRequest authData) {
         try{
-            String sql = "INSERT INTO user (login, password) VALUES (" + authData.login() + ", " + authData.password() + ")";
+            String sql = "INSERT INTO " + tableName() + " (login, password) VALUES (" + authData.login() + ", " + authData.password() + ")";
             db.insert(sql);
             return true;
         } catch (RuntimeException e) {
             System.out.println("Error inserting data: " + e.getMessage());
             return false;
         }
+    }
+
+    @Override
+    public void createTable() {
+        db.createTable(tableName());
+    }
+
+    @Override
+    public String tableName() {
+        return "UserAccounts";
     }
 }

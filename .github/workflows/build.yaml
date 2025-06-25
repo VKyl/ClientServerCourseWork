@@ -10,11 +10,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    services:
-      docker:
-        image: docker:24.0.2
-        options: --privileged
-
     env:
       DB_HOST: 127.0.0.1
       DB_NAME: test_db
@@ -31,9 +26,14 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Set up Docker Compose
+      - name: Install Docker Compose
         run: |
-          docker-compose up -d mysqlDb
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose version
+
+      - name: Start MySQL using Docker Compose
+        run: docker-compose up -d mysqlDb
 
       - name: Wait for MySQL to be ready
         run: |

@@ -12,6 +12,10 @@ import java.net.HttpURLConnection;
 public class LoginHandler extends BaseController {
     private final LoginService service = new LoginService();
 
+    public LoginHandler() {
+        super(false);
+    }
+
     @Override
     @SneakyThrows
     protected void handlePost(HttpExchange exchange) {
@@ -19,7 +23,7 @@ public class LoginHandler extends BaseController {
         try {
             LoginRequest loginRequest = mapper.readValue(exchange.getRequestBody(), LoginRequest.class);
             if (!service.signIn(loginRequest)) {
-                exchange.sendResponseHeaders(403, 0);
+                exchange.sendResponseHeaders(200, 0);
                 exchange.close();
                 return;
             }

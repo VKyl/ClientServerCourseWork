@@ -14,8 +14,12 @@ public class DataBase implements AutoCloseable {
         }
     }
 
-    public long insert(String rawInsertQuery) {
-        try (PreparedStatement statement = dbConnection.prepareStatement(rawInsertQuery, Statement.RETURN_GENERATED_KEYS)) {
+    public Connection dbConnection (){
+        return dbConnection;
+    }
+
+    public long insert(PreparedStatement statement) {
+        try {
             statement.executeUpdate();
             try (ResultSet keys = statement.getGeneratedKeys()) {
                 if (keys.next()) {
@@ -29,18 +33,16 @@ public class DataBase implements AutoCloseable {
         }
     }
 
-    public ResultSet update(String rawUpdateQuery) {
+    public int update(PreparedStatement statement) {
         try {
-            PreparedStatement statement = dbConnection.prepareStatement(rawUpdateQuery);
-            statement.executeUpdate();
-            return statement.getResultSet();
+            return statement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Update query failed", e);
         }
     }
 
-    public boolean delete(String rawDeleteQuery) {
-        try (PreparedStatement statement = dbConnection.prepareStatement(rawDeleteQuery)) {
+    public boolean delete(PreparedStatement statement) {
+        try {
             int affectedRows = statement.executeUpdate();
             return affectedRows > 0;
         } catch (SQLException e) {
@@ -48,29 +50,25 @@ public class DataBase implements AutoCloseable {
         }
     }
 
-    public ResultSet selectById(String rawSelectQuery) {
-        try (PreparedStatement statement = dbConnection.prepareStatement(rawSelectQuery)) {
+    public ResultSet selectById(PreparedStatement statement) {
+        try {
             return statement.executeQuery();
         } catch (SQLException e) {
             throw new RuntimeException("Select by ID query failed", e);
         }
     }
 
-    public ResultSet execQuery(String sql) {
+    public ResultSet execQuery(PreparedStatement statement) {
         try {
-            PreparedStatement statement = dbConnection.prepareStatement(sql);
             return statement.executeQuery();
         } catch (SQLException e) {
-            throw new RuntimeException("Error listing with filters", e);
+            throw new RuntimeException("Error executing query", e);
         }
     }
 
-    public void createTable(String tableName) {
+    public void createTable(String tableName, String columnsQuery) {
         String sql = String.format(
-                "CREATE TABLE IF NOT EXISTS %s (" +
-                        "id BIGINT PRIMARY KEY AUTO_INCREMENT, " +
-                        "name VARCHAR(1000), " +
-                        "price DOUBLE);", tableName);
+                "CREATE TABLE IF NOT EXISTS %s (%s);", tableName, columnsQuery);
 
         try (PreparedStatement st = dbConnection.prepareStatement(sql)) {
             st.executeUpdate();

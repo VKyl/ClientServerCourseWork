@@ -22,8 +22,8 @@ public class LoginTest {
         server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 8080), 10);
         server.createContext("/login", new LoginHandler());
         server.start();
-
     }
+
     @Test
     @SneakyThrows
     public void testLogin() {
@@ -43,6 +43,28 @@ public class LoginTest {
         int responseCode = connection.getResponseCode();
         Assertions.assertEquals(200, responseCode);
     }
+
+    @Test
+    @SneakyThrows
+    public void testRegistration() {
+        String uniqueLogin = "user" + System.currentTimeMillis(); // or use UUID.randomUUID()
+        String jsonBody = String.format("{\"login\":\"%s\", \"password\":\"admin\"}", uniqueLogin);
+        byte[] postData = jsonBody.getBytes();
+
+        URL url = new URL("http://localhost:8080/login");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("PUT");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setDoOutput(true);
+
+        try (var outputStream = connection.getOutputStream()) {
+            outputStream.write(postData);
+        }
+
+        int responseCode = connection.getResponseCode();
+        Assertions.assertEquals(200, responseCode);
+    }
+
 
     @AfterEach
     void tearDown() {

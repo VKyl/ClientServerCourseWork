@@ -7,9 +7,15 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 
 public abstract class BaseController implements HttpHandler {
+    private final boolean isTokenRequired;
+
+    public BaseController(boolean isTokenRequired) {
+        this.isTokenRequired = isTokenRequired;
+    }
+
     @Override
     public void handle(HttpExchange httpExchange) throws IOException {
-        if (httpExchange.getRequestHeaders().getFirst("Token") == null) {
+        if (isTokenRequired && httpExchange.getRequestHeaders().getFirst("Token") == null) {
             httpExchange.sendResponseHeaders(HttpURLConnection.HTTP_FORBIDDEN, 0);
             httpExchange.close();
             return;

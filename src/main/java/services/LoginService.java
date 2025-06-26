@@ -7,14 +7,31 @@ import lombok.SneakyThrows;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class LoginService implements IDbExecutorService {
     private final DataBase db;
 
     public LoginService() {
-        db = MySqlDb.getDataBase();
+        this.db = MySqlDb.getDataBase();
         createTable();
-        signUp(new LoginRequest("admin", "admin"));
+        seedAdminUser();
+    }
+
+    @SneakyThrows
+    private void seedAdminUser() {
+        String checkUserSql = "SELECT COUNT(*) FROM " + tableName() + " WHERE login = ?";
+        try (PreparedStatement checkStatement = db.dbConnection().prepareStatement(checkUserSql)) {
+            checkStatement.setString(1, "admin");
+            try (ResultSet rs = checkStatement.executeQuery()) {
+                if (rs.next() && rs.getInt(1) == 0) {
+                    System.out.println("Admin user not found, creating one...");
+                    signUp(new LoginRequest("admin", "admin"));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Could not check for admin user, probably because tables are being created. " + e.getMessage());
+        }
     }
 
     public boolean signIn(LoginRequest authData) {
@@ -24,10 +41,7 @@ public class LoginService implements IDbExecutorService {
             statement.setString(2, authData.password());
 
             try (ResultSet resultSet = statement.executeQuery()) {
-               return resultSet.next();
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-                return false;
+                return resultSet.next();
             }
         } catch (Exception e) {
             System.out.println("Error during signIn: " + e.getMessage());
@@ -45,7 +59,7 @@ public class LoginService implements IDbExecutorService {
             db.insert(statement);
             return true;
         } catch (Exception e) {
-            System.out.println("Error inserting data: " + e.getMessage());
+            System.err.println("Error during signUp (user might already exist): " + e.getMessage());
             return false;
         }
     }

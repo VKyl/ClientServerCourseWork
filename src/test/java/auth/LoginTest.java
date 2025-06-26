@@ -1,73 +1,74 @@
 package auth;
 
-import com.sun.net.httpserver.HttpServer;
-import controllers.auth.LoginHandler;
-import lombok.SneakyThrows;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
+import controllers.auth.LoginRequest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import services.BaseIntegrationTest;
+import services.LoginService;
 
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.URL;
+import java.sql.SQLException;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@DisplayName("Authentication Logic Integration Tests")
+class LoginTest extends BaseIntegrationTest {
+
+    private LoginService loginService;
 
 
-public class LoginTest {
-    private HttpServer server = null;
     @BeforeEach
-    @SneakyThrows
-    void setUp() {
-        server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 8080), 10);
-        server.createContext("/login", new LoginHandler());
-        server.start();
+    void setUp() throws SQLException {
+        cleanDatabase();
+        this.loginService = new LoginService();
     }
 
     @Test
-    @SneakyThrows
-    public void testLogin() {
-        String jsonBody = "{\"login\":\"admin\", \"password\":\"admin\"}";
-        byte[] postData = jsonBody.getBytes();
+    @DisplayName("Should successfully sign up a new user")
+    void testRegistration() {
+        System.out.println("--- Running test: testRegistration ---");
+        String uniqueLogin = "user_" + System.currentTimeMillis();
+        LoginRequest request = new LoginRequest(uniqueLogin, "strong_password");
 
-        URL url = new URL("http://localhost:8080/login");
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Content-Type", "application/json");
-        connection.setDoOutput(true);
-
-        try (var outputStream = connection.getOutputStream()) {
-            outputStream.write(postData);
-        }
-
-        int responseCode = connection.getResponseCode();
-        Assertions.assertEquals(200, responseCode);
+        boolean wasSuccessful = loginService.signUp(request);
+        assertThat(wasSuccessful).isTrue();
     }
 
     @Test
-    @SneakyThrows
-    public void testRegistration() {
-        String uniqueLogin = "user" + System.currentTimeMillis(); // or use UUID.randomUUID()
-        String jsonBody = String.format("{\"login\":\"%s\", \"password\":\"admin\"}", uniqueLogin);
-        byte[] postData = jsonBody.getBytes();
+    @DisplayName("Should successfully sign in an existing user")
+    void testSuccessfulSignIn() {
+        System.out.println("--- Running test: testSuccessfulSignIn ---");
+        LoginRequest request = new LoginRequest("existingUser", "password123");
+        loginService.signUp(request);
 
-        URL url = new URL("http://localhost:8080/login");
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("PUT");
-        connection.setRequestProperty("Content-Type", "application/json");
-        connection.setDoOutput(true);
+        boolean canSignIn = loginService.signIn(request);
 
-        try (var outputStream = connection.getOutputStream()) {
-            outputStream.write(postData);
-        }
-
-        int responseCode = connection.getResponseCode();
-        Assertions.assertEquals(200, responseCode);
+        assertThat(canSignIn).isTrue();
     }
 
+    @Test
+    @DisplayName("Should fail to sign in with an incorrect password")
+    void testFailedSignIn() {
+        System.out.println("--- Running test: testFailedSignIn ---");
+        LoginRequest signUpRequest = new LoginRequest("anotherUser", "correct_password");
+        loginService.signUp(signUpRequest);
 
-    @AfterEach
-    void tearDown() {
-        server.stop(0);
+        LoginRequest signInRequest = new LoginRequest("anotherUser", "WRONG_password");
+        boolean canSignIn = loginService.signIn(signInRequest);
+
+        assertThat(canSignIn).isFalse();
+    }
+
+    @Test
+    @DisplayName("Should fail to sign up a user with a duplicate login")
+    void testDuplicateRegistration() {
+        System.out.println("--- Running test: testDuplicateRegistration ---");
+        LoginRequest request = new LoginRequest("duplicateUser", "password");
+        boolean firstSignUp = loginService.signUp(request);
+
+        boolean secondSignUp = loginService.signUp(request);
+
+        assertThat(firstSignUp).isTrue();
+        assertThat(secondSignUp).isFalse();
     }
 }

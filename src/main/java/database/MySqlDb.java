@@ -1,17 +1,33 @@
 package database;
 
 public class MySqlDb {
-    private final DataBase db;
-    private static MySqlDb instance = null;
-    private MySqlDb(DatabaseConfig config) {
-        db = new DataBase("com.mysql.cj.jdbc.Driver", "jdbc:mysql://" + config.getHost() + "/" + config.getDatabase() + "?createDatabaseIfNotExist=true", config.getUsername(), config.getPassword() );
+    private static DataBase instance = null;
+    private static DataBase testInstance = null;
+
+    private MySqlDb(DatabaseConfig config) {}
+
+    public static void setTestDatabase(DataBase testDb) {
+        testInstance = testDb;
     }
 
+    public static void clearTestDatabase() {
+        testInstance = null;
+    }
 
     public static DataBase getDataBase() {
-        if (instance == null) {
-            instance = new MySqlDb(new DatabaseConfig());
+        if (testInstance != null) {
+            return testInstance;
         }
-        return instance.db;
+
+        if (instance == null) {
+            DatabaseConfig config = new DatabaseConfig();
+            instance = new DataBase(
+                    "com.mysql.cj.jdbc.Driver",
+                    "jdbc:mysql://" + config.getHost() + "/" + config.getDatabase() + "?createDatabaseIfNotExist=true",
+                    config.getUsername(),
+                    config.getPassword()
+            );
+        }
+        return instance;
     }
 }

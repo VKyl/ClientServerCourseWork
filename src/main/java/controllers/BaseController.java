@@ -15,6 +15,17 @@ public abstract class BaseController implements HttpHandler {
 
     @Override
     public void handle(HttpExchange httpExchange) throws IOException {
+        httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+        httpExchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Token");
+        httpExchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        httpExchange.getResponseHeaders().add("Access-Control-Allow-Credentials", "true");
+        httpExchange.getResponseHeaders().add("Access-Control-Expose-Headers", "Token");
+
+        if (httpExchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
+            httpExchange.sendResponseHeaders(HttpURLConnection.HTTP_NO_CONTENT, -1);
+            return;
+        }
+
         if (isTokenRequired && httpExchange.getRequestHeaders().getFirst("Token") == null) {
             httpExchange.sendResponseHeaders(HttpURLConnection.HTTP_FORBIDDEN, 0);
             httpExchange.close();

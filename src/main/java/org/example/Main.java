@@ -9,10 +9,12 @@ import controllers.auth.LoginHandler;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.concurrent.Executors;
 
 public class Main {
     public static void main(String[] args) throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress(InetAddress.getLocalHost(), 8080), 0);
+        server.setExecutor(Executors.newFixedThreadPool(2));
 
         server.createContext("/login", new LoginHandler());
         server.createContext("/api/accounts", new AccountController());

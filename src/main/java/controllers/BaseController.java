@@ -32,6 +32,7 @@ public abstract class BaseController implements HttpHandler {
             return;
         }
         try {
+            System.out.println("Request " +  httpExchange.getRequestURI() + " " + httpExchange.getRequestMethod());
             switch (httpExchange.getRequestMethod()) {
                 case "GET" -> handleGet(httpExchange);
                 case "POST" -> handlePost(httpExchange);

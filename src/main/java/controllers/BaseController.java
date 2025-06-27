@@ -40,6 +40,8 @@ public abstract class BaseController implements HttpHandler {
                 default -> handleDefault(httpExchange);
             }
         } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
             httpExchange.sendResponseHeaders(500, 0);
             httpExchange.close();
         }
